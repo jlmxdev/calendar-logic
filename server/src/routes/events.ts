@@ -124,7 +124,6 @@ router.post('/:id/override', (req, res) => {
     .run(overrideId, master.calendar_id, master.title, master.description, master.location, parsed.data.newStartUTC, parsed.data.newEndUTC, master.all_day, master.event_tz, id, parsed.data.originalStartUTC, now, now);
 
   const exdates = master.exdates ? JSON.parse(master.exdates) as string[] : [];
-  const { DateTime } = await import('luxon');
   const origLocal = DateTime.fromISO(parsed.data.originalStartUTC).setZone(master.event_tz).toISO();
   exdates.push(origLocal as string);
   db.prepare('UPDATE events SET exdates = ?, updated_at = ? WHERE id = ?').run(JSON.stringify(exdates), now, id);
@@ -151,7 +150,7 @@ router.post('/import/ics', upload.single('file'), (req, res) => {
   const items = importICS(text);
   const now = new Date().toISOString();
   for (const it of items) {
-    const id = crypto.randomUUID();
+    const id = randomUUID();
     db.prepare(`INSERT INTO events (id, calendar_id, title, description, location, start, end, all_day, event_tz, rrule, exdates, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, NULL, ?, ?)`)
       .run(id, calendarId, it.title, it.description, it.location, it.startUTC, it.endUTC, 'UTC', it.rrule, now, now);
